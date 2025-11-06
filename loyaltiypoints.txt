@@ -1,0 +1,128 @@
+DROP DATABASE IF EXISTS shop;
+CREATE DATABASE shop;
+USE shop;
+CREATE TABLE customer(
+    customerId INT PRIMARY KEY,
+    firstName VARCHAR(45) NOT NULL,
+    lastName VARCHAR(45) NOT NULL,
+    totalPurchase DECIMAL(5,2) DEFAULT 0,
+    loyaltyPoints INT DEFAULT 0
+);
+CREATE TABLE orders(
+    orderId INT PRIMARY KEY AUTO_INCREMENT,
+    customerId INT,
+    orderDate DATE DEFAULT (CURRENT_DATE),
+    orderAmount DECIMAL(5,2),
+    FOREIGN KEY (customerId) REFERENCES customer(customerId)
+);
+INSERT INTO customer(customerId,firstName,lastName)
+VALUES(1,'kartik','patil'),
+(2,'john','deo');
+DELIMITER $$
+CREATE TRIGGER auto_trigger
+AFTER INSERT ON orders
+FOR EACH ROW
+BEGIN 
+    DECLARE v_loyalty_points INT;
+    SET v_loyalty_points = NEW.orderAmount DIV 10;
+    UPDATE customer
+    SET loyaltyPoints = loyaltyPoints + v_loyalty_points,
+        totalPurchase = totalPurchase + NEW.orderAmount
+    WHERE customerId = NEW.customerId;
+END $$
+DELIMITER ;
+INSERT INTO orders(customerId,orderAmount)
+VALUES (1,20);
+INSERT INTO orders(customerId,orderAmount)
+VALUES (1,150);
+INSERT INTO orders(customerId,orderAmount)
+VALUES (2,90);
+SELECT * FROM customer;
+SELECT * FROM orders;
+
+
+
++++++++++++++++++++++++_________________+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+-- Deletes the database named 'shop' if it already exists (to avoid errors when re-running the code)
+DROP DATABASE IF EXISTS shop;
+
+-- Creates a new database named 'shop'
+CREATE DATABASE shop;
+
+-- Selects the 'shop' database to work with
+USE shop;
+
+-- Creates a table named 'customer' to store customer information
+CREATE TABLE customer(
+    customerId INT PRIMARY KEY,                -- Unique ID for each customer
+    firstName VARCHAR(45) NOT NULL,            -- Customer's first name
+    lastName VARCHAR(45) NOT NULL,             -- Customer's last name
+    totalPurchase DECIMAL(5,2) DEFAULT 0,      -- Total purchase amount made by the customer (default 0)
+    loyaltyPoints INT DEFAULT 0                -- Loyalty points earned by the customer (default 0)
+);
+
+-- Creates a table named 'orders' to store customer order details
+CREATE TABLE orders(
+    orderId INT PRIMARY KEY AUTO_INCREMENT,    -- Unique order ID (auto increases with every order)
+    customerId INT,                            -- ID of the customer who placed the order
+    orderDate DATE DEFAULT (CURRENT_DATE),     -- Order date (automatically set to today if not given)
+    orderAmount DECIMAL(5,2),                  -- Total amount of this particular order
+    FOREIGN KEY (customerId) REFERENCES customer(customerId)  -- Links the order to the corresponding customer
+);
+
+-- Inserts two sample customers into the 'customer' table
+INSERT INTO customer(customerId,firstName,lastName)
+VALUES(1,'kartik','patil'),                    -- First customer: kartik patil
+(2,'john','deo');                             -- Second customer: john deo
+
+-- Changes the SQL command delimiter from ';' to '$$' 
+-- (so MySQL knows where the trigger block ends)
+DELIMITER $$
+
+-- Creates a trigger named 'auto_trigger' that runs automatically 
+-- AFTER a new record is inserted into the 'orders' table
+CREATE TRIGGER auto_trigger
+AFTER INSERT ON orders
+FOR EACH ROW
+BEGIN 
+    -- Declares a variable to hold calculated loyalty points for this new order
+    DECLARE v_loyalty_points INT;
+
+    -- Calculates loyalty points: 1 point for every 10 units of order amount
+    SET v_loyalty_points = NEW.orderAmount DIV 10;
+
+    -- Updates the corresponding customer's record:
+    -- Adds the new loyalty points and updates their total purchase amount
+    UPDATE customer
+    SET loyaltyPoints = loyaltyPoints + v_loyalty_points,
+        totalPurchase = totalPurchase + NEW.orderAmount
+    WHERE customerId = NEW.customerId;
+END $$
+
+-- Resets the command delimiter back to default ';'
+DELIMITER ;
+
+-- Inserts a new order for customer 1 with amount 20
+-- Trigger automatically adds 2 loyalty points (20 DIV 10 = 2)
+INSERT INTO orders(customerId,orderAmount)
+VALUES (1,20);
+
+-- Inserts another order for customer 1 with amount 150
+-- Trigger adds 15 loyalty points (150 DIV 10 = 15)
+INSERT INTO orders(customerId,orderAmount)
+VALUES (1,150);
+
+-- Inserts an order for customer 2 with amount 90
+-- Trigger adds 9 loyalty points (90 DIV 10 = 9)
+INSERT INTO orders(customerId,orderAmount)
+VALUES (2,90);
+
+-- Displays all data from 'customer' table
+-- This will show updated loyalty points and total purchases after trigger execution
+SELECT * FROM customer;
+
+-- Displays all data from 'orders' table
+-- This shows each order placed by customers
+SELECT * FROM orders;

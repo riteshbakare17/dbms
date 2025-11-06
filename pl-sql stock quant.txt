@@ -1,0 +1,200 @@
+DROP DATABASE IF EXISTS ass4;
+CREATE DATABASE ass4;
+USE ass4;
+CREATE TABLE products (
+    productid INT PRIMARY KEY,
+    productname VARCHAR(50),
+    category VARCHAR(50),
+    price DECIMAL(10,2),
+    stockq INT
+);
+CREATE TABLE orders (
+    orderid INT AUTO_INCREMENT PRIMARY KEY,
+    orderdate DATE
+);
+CREATE TABLE orderitems (
+    orderitemid INT PRIMARY KEY,
+    orderid INT,
+    productid INT,
+    quantity INT,
+    FOREIGN KEY (orderid) REFERENCES orders(orderid),
+    FOREIGN KEY (productid) REFERENCES products(productid)
+);
+INSERT INTO products VALUES
+(1, 'Laptop', 'Electronics', 50000, 10),
+(2, 'Smartphone', 'Electronics', 20000, 15),
+(3, 'Table', 'Furniture', 7000, 5),
+(4, 'Chair', 'Furniture', 3000, 20);
+DELIMITER //
+CREATE PROCEDURE ProcessOrder_2(
+    IN p_product_id INT,
+    IN p_quantity INT
+)
+BEGIN
+    DECLARE v_stock_quantity INT;
+    DECLARE v_order_id INT;
+    DECLARE v_orderitem_id INT;
+    DECLARE v_current_date DATE;
+    SET v_current_date = CURDATE();
+    SELECT stockq INTO v_stock_quantity
+    FROM products
+    WHERE productid = p_product_id;
+    IF v_stock_quantity IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Product does not exist.';
+    ELSEIF v_stock_quantity >= p_quantity THEN
+        UPDATE products
+        SET stockq = stockq - p_quantity
+        WHERE productid = p_product_id;
+        INSERT INTO orders (orderdate)
+        VALUES (v_current_date);
+        SET v_order_id = LAST_INSERT_ID();
+        SELECT IFNULL(MAX(orderitemid), 1000) + 1 INTO v_orderitem_id FROM orderitems;
+        INSERT INTO orderitems (orderitemid, orderid, productid, quantity)
+        VALUES (v_orderitem_id, v_order_id, p_product_id, p_quantity);
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Insufficient stock for the requested product.';
+    END IF;
+END //
+DELIMITER ;
+CALL ProcessOrder_2(1, 2);
+CALL ProcessOrder_2(1, 100);
+SELECT * FROM products;
+SELECT * FROM orders;
+SELECT * FROM orderitems;
+
+
+
+
+
+
+_____________++++++++++++++___________________++++++++++++++____________________________________________+++++++++++++++++++++++++++++________________________________
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Delete the database if it already exists (to start fresh)
+DROP DATABASE IF EXISTS ass4;
+
+-- Create a new database named 'ass4'
+CREATE DATABASE ass4;
+
+-- Select the 'ass4' database to use
+USE ass4;
+
+-- Create a table to store product details
+CREATE TABLE products (
+    productid INT PRIMARY KEY,             -- Unique ID for each product
+    productname VARCHAR(50),               -- Name of the product
+    category VARCHAR(50),                  -- Category (e.g., Electronics, Furniture)
+    price DECIMAL(10,2),                   -- Price of the product
+    stockq INT                             -- Quantity available in stock
+);
+
+-- Create a table to store order information
+CREATE TABLE orders (
+    orderid INT AUTO_INCREMENT PRIMARY KEY,  -- Unique order ID (auto-generated)
+    orderdate DATE                           -- Date when the order was placed
+);
+
+-- Create a table to store details of each item in an order
+CREATE TABLE orderitems (
+    orderitemid INT PRIMARY KEY,             -- Unique ID for each order item
+    orderid INT,                             -- Refers to the related order
+    productid INT,                           -- Refers to the product purchased
+    quantity INT,                            -- Quantity of that product ordered
+    FOREIGN KEY (orderid) REFERENCES orders(orderid),        -- Link to 'orders' table
+    FOREIGN KEY (productid) REFERENCES products(productid)   -- Link to 'products' table
+);
+
+-- Insert initial product data into 'products' table
+INSERT INTO products VALUES
+(1, 'Laptop', 'Electronics', 50000, 10),      -- Product 1
+(2, 'Smartphone', 'Electronics', 20000, 15),  -- Product 2
+(3, 'Table', 'Furniture', 7000, 5),           -- Product 3
+(4, 'Chair', 'Furniture', 3000, 20);          -- Product 4
+
+-- Change the delimiter so MySQL can detect the end of the stored procedure correctly
+DELIMITER //
+
+-- Create a stored procedure named 'ProcessOrder_2'
+CREATE PROCEDURE ProcessOrder_2(
+    IN p_product_id INT,   -- Input parameter for product ID
+    IN p_quantity INT      -- Input parameter for quantity requested
+)
+BEGIN
+    -- Declare local variables
+    DECLARE v_stock_quantity INT;  -- To store current stock of the product
+    DECLARE v_order_id INT;        -- To store the new order ID
+    DECLARE v_orderitem_id INT;    -- To store the new order item ID
+    DECLARE v_current_date DATE;   -- To store current system date
+
+    -- Get the current date
+    SET v_current_date = CURDATE();
+
+    -- Get stock quantity of the requested product
+    SELECT stockq INTO v_stock_quantity
+    FROM products
+    WHERE productid = p_product_id;
+
+    -- If no such product exists, raise an error
+    IF v_stock_quantity IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Product does not exist.';
+
+    -- If enough stock is available
+    ELSEIF v_stock_quantity >= p_quantity THEN
+        -- Reduce stock in 'products' table
+        UPDATE products
+        SET stockq = stockq - p_quantity
+        WHERE productid = p_product_id;
+
+        -- Insert a new order with current date into 'orders' table
+        INSERT INTO orders (orderdate)
+        VALUES (v_current_date);
+
+        -- Get the automatically generated Order ID
+        SET v_order_id = LAST_INSERT_ID();
+
+        -- Find the next available Order Item ID (starting from 1001)
+        SELECT IFNULL(MAX(orderitemid), 1000) + 1 INTO v_orderitem_id FROM orderitems;
+
+        -- Insert details of this item into 'orderitems' table
+        INSERT INTO orderitems (orderitemid, orderid, productid, quantity)
+        VALUES (v_orderitem_id, v_order_id, p_product_id, p_quantity);
+
+    -- If not enough stock is available, raise an error
+    ELSE
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Insufficient stock for the requested product.';
+    END IF;
+END //
+
+-- Reset the delimiter back to default
+DELIMITER ;
+
+-- Call the procedure to order 2 Laptops (should succeed)
+CALL ProcessOrder_2(1, 2);
+
+-- Call the procedure to order 100 Laptops (should fail - insufficient stock)
+CALL ProcessOrder_2(1, 100);
+
+-- Display all products and their remaining stock
+SELECT * FROM products;
+
+-- Display all orders created
+SELECT * FROM orders;
+
+-- Display all items within each order
+SELECT * FROM orderitems;

@@ -1,0 +1,129 @@
+DROP DATABASE IF EXISTS company;
+CREATE DATABASE company;
+USE company;
+CREATE TABLE employees(employeeId INT PRIMARY KEY,firstName VARCHAR(45) NOT NULL,lastName VARCHAR(45) NOT NULL,salary DECIMAL(10,2) CHECK (salary>0));
+CREATE TABLE salaryUpdates(updateId INT PRIMARY KEY,employeeId INT,newSalary DECIMAL(10,2),updateDate DATE DEFAULT (CURRENT_DATE),FOREIGN KEY (employeeId) REFERENCES employees(employeeId));
+INSERT INTO employees(employeeId,firstName,lastName,salary) VALUES(1,'sakshi','jadhav',10000),(2,'pragati','jadhav',12000);
+INSERT INTO salaryUpdates(updateId,employeeId,newSalary) VALUES(1,1,12000),(2,2,14000);
+DELIMITER $$
+CREATE PROCEDURE check_cursor()
+BEGIN
+DECLARE done INT DEFAULT 0;
+DECLARE v_employeeId INT;
+DECLARE v_salary DECIMAL(10,2);
+DECLARE v_new_salary DECIMAL(10,2);
+DECLARE v_exist INT DEFAULT 0;
+DECLARE emp_cursor CURSOR FOR SELECT employeeId,salary FROM employees ORDER BY employeeId;
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;
+OPEN emp_cursor;
+read_loop:LOOP
+FETCH emp_cursor INTO v_employeeId,v_salary;
+IF done=1 THEN LEAVE read_loop; END IF;
+SELECT COUNT(*) INTO v_exist FROM salaryUpdates WHERE employeeId=v_employeeId;
+IF v_exist>0 THEN
+SELECT newSalary INTO v_new_salary FROM salaryUpdates WHERE employeeId=v_employeeId ORDER BY employeeId DESC LIMIT 1;
+UPDATE employees SET salary=v_new_salary WHERE employeeId=v_employeeId;
+END IF;
+SET v_exist=0;
+END LOOP;
+CLOSE emp_cursor;
+END $$
+DELIMITER ;
+CALL check_cursor();
+INSERT INTO salaryUpdates(updateId,employeeId,newSalary) VALUES(4,1,20000);
+CALL check_cursor();
+SELECT * FROM employees;
+SELECT * FROM salaryUpdates;
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+-- Remove the 'company' database if it already exists to start fresh
+DROP DATABASE IF EXISTS company;
+-- Create a new database named 'company'
+CREATE DATABASE company;
+-- Switch to using the newly created 'company' database
+USE company;
+
+-- Create the 'employees' table to store employee basic info and salary
+CREATE TABLE employees(
+    employeeId INT PRIMARY KEY,                -- Unique identifier for each employee
+    firstName VARCHAR(45) NOT NULL,            -- Employee first name (required)
+    lastName VARCHAR(45) NOT NULL,             -- Employee last name (required)
+    salary DECIMAL(10,2) CHECK (salary>0)     -- Employee salary; must be greater than 0
+);
+
+-- Create the 'salaryUpdates' table to store pending or scheduled salary changes
+CREATE TABLE salaryUpdates(
+    updateId INT PRIMARY KEY,                  -- Unique ID for each salary update record
+    employeeId INT,                            -- Employee ID that this update applies to
+    newSalary DECIMAL(10,2),                   -- The new salary value proposed/applied
+    updateDate DATE DEFAULT (CURRENT_DATE),    -- Date when update was created (defaults to today)
+    FOREIGN KEY (employeeId) REFERENCES employees(employeeId)  -- Enforce that employeeId exists in employees table
+);
+
+-- Insert initial test data into 'employees' table: two employees with starting salaries
+INSERT INTO employees(employeeId,firstName,lastName,salary) VALUES(1,'sakshi','jadhav',10000),(2,'pragati','jadhav',12000);
+-- Insert initial test data into 'salaryUpdates' table: new salaries for employees (to be applied by the procedure)
+INSERT INTO salaryUpdates(updateId,employeeId,newSalary) VALUES(1,1,12000),(2,2,14000);
+
+-- Change the delimiter to $$ so we can define the multi-statement stored procedure without premature termination
+DELIMITER $$
+-- Start creation of the stored procedure named 'check_cursor' which implements the explicit cursor logic
+CREATE PROCEDURE check_cursor()
+BEGIN
+-- Declare a flag variable 'done' to detect when the cursor has no more rows; default is 0 (not done)
+DECLARE done INT DEFAULT 0;
+-- Declare variable to hold employeeId fetched from cursor
+DECLARE v_employeeId INT;
+-- Declare variable to hold the current salary fetched from cursor (not strictly required for update logic but present)
+DECLARE v_salary DECIMAL(10,2);
+-- Declare variable to store the new salary value fetched from salaryUpdates
+DECLARE v_new_salary DECIMAL(10,2);
+-- Declare a helper variable to indicate existence (count) of updates for the current employee
+DECLARE v_exist INT DEFAULT 0;
+-- Declare an explicit cursor 'emp_cursor' that selects employeeId and salary from employees ordered by employeeId
+DECLARE emp_cursor CURSOR FOR SELECT employeeId,salary FROM employees ORDER BY employeeId;
+-- Declare a continue handler for NOT FOUND; when FETCH reaches end, set done = 1 instead of raising an error
+DECLARE CONTINUE HANDLER FOR NOT FOUND SET done=1;
+-- Open the cursor so we can start fetching rows
+OPEN emp_cursor;
+-- Start a labelled loop to read rows from the cursor one by one
+read_loop:LOOP
+-- Fetch the next row from emp_cursor into v_employeeId and v_salary
+FETCH emp_cursor INTO v_employeeId,v_salary;
+-- If the NOT FOUND handler set done = 1, exit the loop as there are no more rows
+IF done=1 THEN LEAVE read_loop; END IF;
+-- Check if there exists at least one salary update entry for this employee; store count in v_exist
+SELECT COUNT(*) INTO v_exist FROM salaryUpdates WHERE employeeId=v_employeeId;
+-- If one or more update records exist for this employee, proceed to fetch the latest and apply it
+IF v_exist>0 THEN
+-- Retrieve the latest newSalary for this employee; ORDER BY employeeId DESC LIMIT 1 returns the most recent by ID ordering
+SELECT newSalary INTO v_new_salary FROM salaryUpdates WHERE employeeId=v_employeeId ORDER BY employeeId DESC LIMIT 1;
+-- Update the employees table setting the salary to the retrieved newSalary for the current employee
+UPDATE employees SET salary=v_new_salary WHERE employeeId=v_employeeId;
+END IF;
+-- Reset the existence flag for the next iteration
+SET v_exist=0;
+-- End of loop body; continue to next FETCH
+END LOOP;
+-- Close the cursor after processing all rows
+CLOSE emp_cursor;
+-- End of the stored procedure body
+END $$
+-- Restore the statement delimiter back to the default semicolon
+DELIMITER ;
+-- Call the procedure to apply any salary updates currently present in salaryUpdates to employees
+CALL check_cursor();
+-- Insert an additional salary update for employee 1 (this will not affect employees table until procedure is run again)
+INSERT INTO salaryUpdates(updateId,employeeId,newSalary) VALUES(4,1,20000);
+-- Call the procedure again to apply the newly inserted update (so employee 1 will get salary = 20000)
+CALL check_cursor();
+-- Show the final contents of the employees table (to verify salary updates were applied)
+SELECT * FROM employees;
+-- Show the final contents of the salaryUpdates table (to verify update records)
+SELECT * FROM salaryUpdates;

@@ -1,0 +1,35 @@
+// Drop the existing 'students' collection if it exists to start fresh
+db.students.drop();
+
+// Insert multiple student documents into the 'students' collection
+db.students.insertMany([
+  {id: 1, name: "ABC", age: 20, department: "Computer Engineering", courses: {}}, 
+  {id: 2, name: "Pranav", age: 20, department: "Electrical Engineering"}
+]);
+
+// Find all students whose department is "Electrical Engineering"
+db.students.find({department: "Electrical Engineering"});
+
+// Find all students but show only the 'name' and 'department' fields (projection)
+db.students.find({}, {name: 1, department: 1});
+
+// Update the student with id = 1: set age to 21 and department to "AI_DS"
+db.students.updateOne({id: 1}, {$set: {age: 21, department: "AI_DS"}});
+
+// Find the student with id = 1 to check the updated values
+db.students.find({id: 1});
+
+// Update all students to add a new field 'college' with value "AISSMS IOIT"
+db.students.updateMany({}, {$set: {college: "AISSMS IOIT"}});
+
+// Find all students to verify the 'college' field has been added
+db.students.find();
+
+// Delete the student with id = 1 from the collection
+db.students.deleteOne({id: 1});
+
+// Delete all students whose 'college' field is "AISSMS IOIT"
+db.students.deleteMany({college: "AISSMS IOIT"});
+
+// Find all students to confirm the collection is now empty
+db.students.find();

@@ -1,0 +1,221 @@
+DROP DATABASE IF EXISTS ERP;
+CREATE DATABASE ERP;
+USE ERP;
+CREATE TABLE Students (
+    StudentID INT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL
+);
+CREATE TABLE Courses (
+    CourseID INT PRIMARY KEY,
+    CourseName VARCHAR(100) NOT NULL
+);
+CREATE TABLE Grades (
+    GradeID INT PRIMARY KEY,
+    StudentID INT,
+    CourseID INT,
+    Grade CHAR(2),
+    CreditHours INT NOT NULL,
+    FOREIGN KEY (StudentID) REFERENCES Students(StudentID),
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID)
+);
+INSERT INTO Students (StudentID, FirstName, LastName) VALUES
+(1, 'Alice', 'Johnson'),
+(2, 'Bob', 'Smith'),
+(3, 'Charlie', 'Brown');
+INSERT INTO Courses (CourseID, CourseName) VALUES
+(101, 'Database Systems'),
+(102, 'Operating Systems'),
+(103, 'Computer Networks');
+INSERT INTO Grades (GradeID, StudentID, CourseID, Grade, CreditHours) VALUES
+(1, 1, 101, 'A', 3),
+(2, 1, 102, 'B', 4),
+(3, 1, 103, 'A', 3),
+(4, 2, 101, 'C', 3),
+(5, 2, 102, 'B', 4),
+(6, 2, 103, 'B', 3),
+(7, 3, 101, 'A', 3),
+(8, 3, 102, 'A', 4),
+(9, 3, 103, 'B', 3);
+UPDATE Grades SET Grade = 4 WHERE Grade = 'A';
+UPDATE Grades SET Grade = 3 WHERE Grade = 'B';
+UPDATE Grades SET Grade = 2 WHERE Grade = 'C';
+UPDATE Grades SET Grade = 1 WHERE Grade = 'D';
+UPDATE Grades SET Grade = 0 WHERE Grade = 'F';
+DELIMITER //
+CREATE FUNCTION calculate_gpa (
+    f_student_id INT
+) RETURNS DECIMAL(5,2)
+READS SQL DATA
+BEGIN
+    DECLARE total_points DECIMAL(10,2) DEFAULT 0;
+    DECLARE total_credits DECIMAL(10,2) DEFAULT 0;
+    DECLARE gpa DECIMAL(5,2);
+    SELECT SUM(g.Grade * g.CreditHours) INTO total_points
+    FROM Grades g
+    WHERE g.StudentID = f_student_id;
+    SELECT SUM(g.CreditHours) INTO total_credits
+    FROM Grades g
+    WHERE g.StudentID = f_student_id;
+    IF total_credits > 0 THEN
+        SET gpa = total_points / total_credits;
+    ELSE
+        SET gpa = 0;
+    END IF;
+    RETURN gpa;
+END //
+DELIMITER ;
+select * from students;
+select * from courses;
+select * from grades;
+SELECT
+    s.StudentID,
+    s.FirstName,
+    s.LastName,
+    calculate_gpa(s.StudentID) AS GPA
+FROM Students s;
+select calculate_gpa(3);
+select calculate_gpa(4);
+
+
+
+
+
+
+
+
+++++++++++++++++++++++++++++++______________________+++++++++++++++++++++++++++++++++++++++++______________________________________++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
+
+
+
+-- Delete database if it already exists
+DROP DATABASE IF EXISTS ERP;
+
+-- Create a new database named ERP
+CREATE DATABASE ERP;
+
+-- Select the ERP database for use
+USE ERP;
+
+-- Create Students table to store student details
+CREATE TABLE Students (
+    StudentID INT PRIMARY KEY,             -- Unique ID for each student
+    FirstName VARCHAR(50) NOT NULL,        -- Student's first name
+    LastName VARCHAR(50) NOT NULL          -- Student's last name
+);
+
+-- Create Courses table to store course details
+CREATE TABLE Courses (
+    CourseID INT PRIMARY KEY,              -- Unique ID for each course
+    CourseName VARCHAR(100) NOT NULL       -- Name of the course
+);
+
+-- Create Grades table to store each student's grade in a course
+CREATE TABLE Grades (
+    GradeID INT PRIMARY KEY,               -- Unique ID for each grade record
+    StudentID INT,                         -- Links to Students table
+    CourseID INT,                          -- Links to Courses table
+    Grade CHAR(2),                         -- Grade received (A, B, C, etc.)
+    CreditHours INT NOT NULL,              -- Credit hours for the course
+    FOREIGN KEY (StudentID) REFERENCES Students(StudentID),   -- Enforce student link
+    FOREIGN KEY (CourseID) REFERENCES Courses(CourseID)       -- Enforce course link
+);
+
+-- Insert records into Students table
+INSERT INTO Students (StudentID, FirstName, LastName) VALUES
+(1, 'Alice', 'Johnson'),
+(2, 'Bob', 'Smith'),
+(3, 'Charlie', 'Brown');
+
+-- Insert records into Courses table
+INSERT INTO Courses (CourseID, CourseName) VALUES
+(101, 'Database Systems'),
+(102, 'Operating Systems'),
+(103, 'Computer Networks');
+
+-- Insert grade records for each student in various courses
+INSERT INTO Grades (GradeID, StudentID, CourseID, Grade, CreditHours) VALUES
+(1, 1, 101, 'A', 3),
+(2, 1, 102, 'B', 4),
+(3, 1, 103, 'A', 3),
+(4, 2, 101, 'C', 3),
+(5, 2, 102, 'B', 4),
+(6, 2, 103, 'B', 3),
+(7, 3, 101, 'A', 3),
+(8, 3, 102, 'A', 4),
+(9, 3, 103, 'B', 3);
+
+-- Convert letter grades to numeric values
+UPDATE Grades SET Grade = 4 WHERE Grade = 'A';  -- A = 4 points
+UPDATE Grades SET Grade = 3 WHERE Grade = 'B';  -- B = 3 points
+UPDATE Grades SET Grade = 2 WHERE Grade = 'C';  -- C = 2 points
+UPDATE Grades SET Grade = 1 WHERE Grade = 'D';  -- D = 1 point
+UPDATE Grades SET Grade = 0 WHERE Grade = 'F';  -- F = 0 points
+
+-- Change delimiter to allow function creation
+DELIMITER //
+
+-- Create a function to calculate GPA for a student
+CREATE FUNCTION calculate_gpa (
+    f_student_id INT                         -- Input: student ID
+) RETURNS DECIMAL(5,2)                       -- Output: GPA value (e.g., 3.75)
+READS SQL DATA                               -- Function only reads data, doesn't modify it
+BEGIN
+    DECLARE total_points DECIMAL(10,2) DEFAULT 0;  -- Stores total grade points
+    DECLARE total_credits DECIMAL(10,2) DEFAULT 0; -- Stores total credit hours
+    DECLARE gpa DECIMAL(5,2);                     -- Final GPA value
+
+    -- Calculate total grade points (grade * credit hours)
+    SELECT SUM(g.Grade * g.CreditHours) INTO total_points
+    FROM Grades g
+    WHERE g.StudentID = f_student_id;
+
+    -- Calculate total credit hours for that student
+    SELECT SUM(g.CreditHours) INTO total_credits
+    FROM Grades g
+    WHERE g.StudentID = f_student_id;
+
+    -- Compute GPA = total points / total credits
+    IF total_credits > 0 THEN
+        SET gpa = total_points / total_credits;
+    ELSE
+        SET gpa = 0;  -- Avoid division by zero if no grades
+    END IF;
+
+    -- Return final GPA value
+    RETURN gpa;
+END //
+
+-- Reset the delimiter back to normal
+DELIMITER ;
+
+-- Display all students
+select * from students;
+
+-- Display all courses
+select * from courses;
+
+-- Display all grade records
+select * from grades;
+
+-- Display GPA for each student using the function
+SELECT
+    s.StudentID,
+    s.FirstName,
+    s.LastName,
+    calculate_gpa(s.StudentID) AS GPA
+FROM Students s;
+
+-- Calculate GPA for student with ID 3
+select calculate_gpa(3);
+
+-- Calculate GPA for student with ID 4 (no records → GPA = 0)
+select calculate_gpa(4);
+

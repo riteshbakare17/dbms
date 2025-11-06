@@ -1,0 +1,43 @@
+// Insert multiple product documents into the 'products' collection
+db.products.insertMany([ 
+    { "_id": 1, "ProductName": "Product A", "Category": "Electronics", "Price": 500, "QuantitySold": 20 },     
+    { "_id": 2, "ProductName": "Product B", "Category": "Electronics", "Price": 1000, "QuantitySold": 5 }, 
+    { "_id": 3, "ProductName": "Product C", "Category": "Groceries", "Price": 250, "QuantitySold": 30 }, 
+    { "_id": 4, "ProductName": "Product D", "Category": "Groceries", "Price": 750, "QuantitySold": 15 }, 
+    { "_id": 5, "ProductName": "Product E", "Category": "Furniture", "Price": 500, "QuantitySold": 5 } 
+]);
+
+// OUTPUT: 
+// {
+//   acknowledged: true,
+//   insertedIds: { '0': 1, '1': 2, '2': 3, '3': 4, '4': 5 }
+// }
+
+// Map-Reduce style operation using Aggregation:
+
+db.products.aggregate([ 
+  { 
+    // Project only the fields needed for computation
+    $project: { 
+      Category: 1,        // Include the category of the product
+      QuantitySold: 1     // Include the quantity sold
+    } 
+  }, 
+  { 
+    // Group the products by Category
+    $group: {       
+      _id: "$Category",                      // Group key is Category
+      totalQuantitySold: { $sum: "$QuantitySold" } // Sum the QuantitySold for each category
+    } 
+  } 
+]);
+
+// OUTPUT:
+// { _id: 'Furniture',   totalQuantitySold: 5 }
+// { _id: 'Groceries',   totalQuantitySold: 45 }
+// { _id: 'Electronics', totalQuantitySold: 25 }
+
+// Explanation:
+// 1. $project acts like the "map" phase: selecting the necessary fields.
+// 2. $group acts like the "reduce" phase: aggregating quantities by category.
+// 3. The final output gives the total quantity sold for each product category.

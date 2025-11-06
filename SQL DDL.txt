@@ -1,0 +1,266 @@
+DROP DATABASE IF EXISTS info;
+CREATE DATABASE info;
+USE info;
+
+CREATE TABLE department (
+  deptid INT,
+  deptname VARCHAR(50),
+  PRIMARY KEY (deptid)
+);
+
+CREATE TABLE employee (
+  empid INT,
+  empname VARCHAR(50),
+  deptid INT,
+  deptsalary INT,
+  PRIMARY KEY (empid),
+  CONSTRAINT fk_emp_dept FOREIGN KEY (deptid) REFERENCES department(deptid),
+  CONSTRAINT chk_deptsalary CHECK (deptsalary > 0)
+);
+
+ALTER TABLE employee ADD COLUMN hobby VARCHAR(50);
+ALTER TABLE employee ADD COLUMN passyear INT;
+ALTER TABLE employee ALTER COLUMN passyear SET DEFAULT 2027;
+ALTER TABLE employee MODIFY COLUMN deptsalary INT NOT NULL;
+
+CREATE INDEX idx_salary ON employee(deptsalary);
+
+CREATE VIEW emp_v1 AS SELECT empid, deptid FROM employee;
+
+INSERT INTO department VALUES (101, 'computer');
+INSERT INTO department VALUES (102, 'computer');
+
+INSERT INTO employee (empid, empname, deptid, deptsalary, hobby, passyear)
+VALUES
+  (1, 'rit', 101, 10000, 'swimming', 2027),
+  (2, 'man', 102, 20000, 'running', 2027);
+
+SELECT * FROM emp_v1;
+
+SELECT e.empid, e.empname, d.deptname FROM employee e, department d;
+SELECT e.empid, e.empname, d.deptname FROM employee e JOIN department d ON e.deptid = d.deptid;
+
+ALTER TABLE employee DROP PRIMARY KEY;
+ALTER TABLE employee ADD PRIMARY KEY (empid, empname);
+ALTER TABLE employee ALTER COLUMN passyear DROP DEFAULT;
+
+CREATE TABLE employee_ai (
+  Emp_id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50)
+);
+
+INSERT INTO employee_ai (name) VALUES ('ritesh');
+INSERT INTO employee_ai (name) VALUES ('Manas');
+
+SELECT * FROM employee_ai;
+
+SELECT * FROM employee;
+INSERT INTO employee (empid, empname, deptid, deptsalary, hobby, passyear)
+VALUES (3, 'raj', 101, 15000, 'chess', 2026);
+UPDATE employee SET deptsalary = 18000 WHERE empid = 3;
+DELETE FROM employee WHERE empid = 3;
+SELECT empid, empname, deptsalary FROM employee WHERE deptsalary > 10000;
+SELECT deptid, COUNT(*) AS total_employees FROM employee GROUP BY deptid;
+SELECT deptid, AVG(deptsalary) AS avg_salary FROM employee GROUP BY deptid;
+SELECT e.empname, d.deptname FROM employee e JOIN department d ON e.deptid = d.deptid;
+INSERT INTO department VALUES (103, 'IT');
+SELECT * FROM department;
+
+
+
+
+
+
+
+
+
+
+
+
+_______________+++++++++++_____________+++++++++++++____________++++++++++_______________+++++++++++_________________________________________________________________
+
+-- ==================================================================
+-- DATABASE CREATION
+-- ==================================================================
+-- Delete the database if it already exists to start fresh
+DROP DATABASE IF EXISTS info;
+
+-- Create a new database named 'info'
+CREATE DATABASE info;
+
+-- Switch to using this new database
+USE info;
+
+
+
+-- ==================================================================
+-- TABLE CREATION (DDL)
+-- ==================================================================
+
+-- Create 'department' table to store department information
+CREATE TABLE department (
+  deptid INT,                    -- Department ID
+  deptname VARCHAR(50),          -- Department Name
+  PRIMARY KEY (deptid)           -- Primary Key ensures unique deptid values
+);
+
+
+
+-- Create 'employee' table to store employee information
+CREATE TABLE employee (
+  empid INT,                     -- Employee ID
+  empname VARCHAR(50),           -- Employee Name
+  deptid INT,                    -- Foreign Key (links to department)
+  deptsalary INT,                -- Department Salary
+  PRIMARY KEY (empid),           -- Primary Key on empid
+  CONSTRAINT fk_emp_dept FOREIGN KEY (deptid) REFERENCES department(deptid),  -- Foreign Key constraint
+  CONSTRAINT chk_deptsalary CHECK (deptsalary > 0)  -- Check constraint to ensure salary is positive
+);
+
+
+
+-- ==================================================================
+-- ALTER TABLE (Add/Modify Columns and Constraints)
+-- ==================================================================
+
+-- Add a new column 'hobby' to employee table
+ALTER TABLE employee ADD COLUMN hobby VARCHAR(50);
+
+-- Add a new column 'passyear' to employee table
+ALTER TABLE employee ADD COLUMN passyear INT;
+
+-- Set a DEFAULT value for the 'passyear' column (2027 will be used if not specified)
+ALTER TABLE employee ALTER COLUMN passyear SET DEFAULT 2027;
+
+-- Modify 'deptsalary' column to make it NOT NULL (value must be provided)
+ALTER TABLE employee MODIFY COLUMN deptsalary INT NOT NULL;
+
+
+
+-- ==================================================================
+-- INDEX CREATION
+-- ==================================================================
+-- Create an index on 'deptsalary' column to make salary-based searches faster
+CREATE INDEX idx_salary ON employee(deptsalary);
+
+
+
+-- ==================================================================
+-- VIEW CREATION
+-- ==================================================================
+-- Create a simple VIEW showing only empid and deptid columns from employee table
+CREATE VIEW emp_v1 AS SELECT empid, deptid FROM employee;
+
+
+
+-- ==================================================================
+-- INSERTING INITIAL DATA (DML)
+-- ==================================================================
+-- Insert sample records into 'department' table
+INSERT INTO department VALUES (101, 'Computer');
+INSERT INTO department VALUES (102, 'Mechanical');
+
+-- Insert sample records into 'employee' table
+INSERT INTO employee (empid, empname, deptid, deptsalary, hobby, passyear)
+VALUES
+  (1, 'Rit', 101, 10000, 'Swimming', 2027),
+  (2, 'Man', 102, 20000, 'Running', 2027);
+
+
+
+-- ==================================================================
+-- SIMPLE SELECTS AND JOINS
+-- ==================================================================
+-- Display the view data (empid and deptid)
+SELECT * FROM emp_v1;
+
+-- Cartesian Product (cross join) - shows all combinations
+SELECT e.empid, e.empname, d.deptname FROM employee e, department d;
+
+-- Inner Join - shows only matching deptid from both tables
+SELECT e.empid, e.empname, d.deptname 
+FROM employee e 
+JOIN department d ON e.deptid = d.deptid;
+
+
+
+-- ==================================================================
+-- MODIFYING PRIMARY KEY (Composite Key Example)
+-- ==================================================================
+-- Drop the old Primary Key
+ALTER TABLE employee DROP PRIMARY KEY;
+
+-- Add new Composite Primary Key (combines empid + empname as unique identifier)
+ALTER TABLE employee ADD PRIMARY KEY (empid, empname);
+
+-- Drop default value for passyear (optional step)
+ALTER TABLE employee ALTER COLUMN passyear DROP DEFAULT;
+
+
+
+-- ==================================================================
+-- AUTO-INCREMENT (Simulating a SEQUENCE)
+-- ==================================================================
+-- MySQL doesn’t have SEQUENCE like Oracle, so AUTO_INCREMENT is used instead
+CREATE TABLE employee_ai (
+  Emp_id INT AUTO_INCREMENT PRIMARY KEY,  -- Automatically increases with each record
+  name VARCHAR(50)
+);
+
+-- Insert two sample records to see auto-increment in action
+INSERT INTO employee_ai (name) VALUES ('Ritesh');
+INSERT INTO employee_ai (name) VALUES ('Manas');
+
+-- Display all rows from the employee_ai table
+SELECT * FROM employee_ai;
+
+
+
+
+
+
+-- ==================================================================
+-- DML QUERIES (10 Examples)
+-- ==================================================================
+
+-- 1. Display all employees
+SELECT * FROM employee;
+
+-- 2. Insert a new employee record
+INSERT INTO employee (empid, empname, deptid, deptsalary, hobby, passyear)
+VALUES (3, 'Raj', 101, 15000, 'Chess', 2026);
+
+-- 3. Update salary of employee with empid = 3
+UPDATE employee SET deptsalary = 18000 WHERE empid = 3;
+
+-- 4. Delete the employee with empid = 3
+DELETE FROM employee WHERE empid = 3;
+
+-- 5. Select employees with salary greater than 10000
+SELECT empid, empname, deptsalary FROM employee WHERE deptsalary > 10000;
+
+-- 6. Count total employees in each department
+SELECT deptid, COUNT(*) AS total_employees FROM employee GROUP BY deptid;
+
+-- 7. Calculate average salary per department
+SELECT deptid, AVG(deptsalary) AS avg_salary FROM employee GROUP BY deptid;
+
+-- 8. Display employee names with their department names (join)
+SELECT e.empname, d.deptname 
+FROM employee e 
+JOIN department d ON e.deptid = d.deptid;
+
+-- 9. Add a new department
+INSERT INTO department VALUES (103, 'IT');
+
+-- 10. Display all departments
+SELECT * FROM department;
+
+
+
+-- ==================================================================
+-- END OF SCRIPT
+-- ==================================================================
+
+
+

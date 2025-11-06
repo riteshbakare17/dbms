@@ -1,0 +1,336 @@
+drop database if exists exp3;
+create database exp3;
+use exp3;
+create table department(
+    deptID integer primary key,
+    deptName varchar(50)
+);
+create table employees(
+    empID integer primary key,
+    fname varchar(50),
+    lname varchar(50),
+    deptID integer,
+    salary integer,
+    foreign key(deptID) references department(deptID)
+);
+create table projects(
+    projID integer primary key,
+    projName varchar(50)
+);
+create table employeeProject(
+    empID integer,
+    projID integer,
+    primary key(empID,projID),
+    foreign key(empID) references employees(empID),
+    foreign key(projID) references projects(projID)
+);
+insert into department values(101,'computer');
+insert into department values(102,'mechanical');
+insert into department values(103,'civil');
+insert into department values(104,'it');
+insert into department values(105,'aids');
+insert into employees values(1,'manasi','choudhari',101,10000);
+insert into employees values(2,'manas','dhomane',102,20000);
+insert into employees values(3,'raj','choudhari',103,30000);
+insert into employees values(4,'rhea','choudhari',104,40000);
+insert into employees values(5,'sai','chavan',105,50000);
+insert into projects values(01,'mental_health');
+insert into projects values(02,'atm');
+insert into projects values(03,'farmer');
+insert into projects values(04,'data');
+insert into employeeProject values(1,01);
+insert into employeeProject values(2,02);
+insert into employeeProject values(3,03);
+insert into employeeProject values(4,04);
+select empID,deptName 
+from employees,department 
+where employees.deptID=department.deptID;
+select empID,employees.deptID,deptName 
+from employees,department 
+where employees.deptID=department.deptID;
+select employees.empID,projects.projID,projects.projName 
+from employees,projects,employeeProject 
+where employees.empID=employeeProject.empID 
+and projects.projID=employeeProject.projID;
+select projects.projID,projects.projName,employees.empid 
+from employees,projects,employeeProject 
+where employees.empID=employeeProject.empID 
+and projects.projID=employeeProject.projID;
+SELECT e.empID, p.projID, p.projName
+FROM employees e
+LEFT JOIN employeeProject ep ON e.empID = ep.empID
+LEFT JOIN projects p ON ep.projID = p.projID
+UNION
+SELECT e.empID, p.projID, p.projName
+FROM projects p
+LEFT JOIN employeeProject ep ON p.projID = ep.projID
+LEFT JOIN employees e ON ep.empID = e.empID;
+select empID,salary 
+from employees 
+where salary>(select avg(salary)from employees);
+select empid,fname,lname 
+from employees 
+where empid in(select empid from employeeproject where projid=(select projid from projects where projName='atm'));
+select deptName , sum(salary) 
+from department,employees 
+where employees.deptID=department.deptID 
+group by deptName 
+having sum(salary)>10000;
+select deptName , sum(salary) 
+from department,employees 
+where employees.deptID=department.deptID 
+group by deptName 
+having sum(salary);
+create view details as 
+select e.empID,e.fname,e.lname,p.projID,p.projName 
+from employees e,projects p,employeeproject ep 
+where e.empID=ep.empID and p.projID=ep.projID;
+select * from details;
+select empID,fname,lname,salary 
+from employees 
+where salary>(select avg(salary) from employees);
+SELECT e.empID, e.fname, e.lname, d.deptName
+FROM employees e
+JOIN department d ON e.deptID = d.deptID
+WHERE e.deptID = (
+    SELECT deptID
+    FROM department
+    WHERE deptName = 'computer'
+);
+select e.empID,e.fname,e.lname,p.projID,p.projName 
+from employees e,projects p,employeeproject ep 
+where e.empID=ep.empID and p.projID=ep.projID and e.fname='manasi';
+select empID,fname,lname 
+from employees 
+where empID not in (select empID from employeeproject);
+select deptName , count(*) as no_employees 
+from department d,employees e 
+where e.deptID=d.deptID 
+group by d.deptName 
+having count(*)>1;
+select deptName , count(*) as no_employees 
+from department d,employees e 
+where e.deptID=d.deptID 
+group by d.deptName 
+having count(*)=1;
+SELECT e.empID, e.fname, e.lname, e.salary, d.deptName
+FROM employees e
+JOIN department d ON e.deptID = d.deptID
+WHERE e.salary = (
+    SELECT MAX(salary)
+    FROM employees
+    WHERE deptID = e.deptID
+);
+SELECT p.projID, p.projName
+FROM projects p
+LEFT JOIN employeeProject ep ON p.projID = ep.projID
+WHERE ep.projID IS NULL;
+
+
+
+
+
+
+
+
+______________++++++++++++++++++++________________________________++++++++++++++++++___________________++++++++++++++++++++++
+
+
+
+
+
+
+-- Delete the database if it already exists (to avoid errors)
+drop database if exists exp3;
+
+-- Create a new database
+create database exp3;
+
+-- Select this database to work with
+use exp3;
+
+-- Create the Department table to store department details
+create table department(
+    deptID integer primary key,          -- Unique ID for each department
+    deptName varchar(50)                 -- Name of the department
+);
+
+-- Create the Employees table to store employee details
+create table employees(
+    empID integer primary key,           -- Unique ID for each employee
+    fname varchar(50),                   -- First name
+    lname varchar(50),                   -- Last name
+    deptID integer,                      -- Department ID where employee works
+    salary integer,                      -- Employee salary
+    foreign key(deptID) references department(deptID)  -- Links employee to their department
+);
+
+-- Create the Projects table to store project details
+create table projects(
+    projID integer primary key,          -- Unique ID for each project
+    projName varchar(50)                 -- Name of the project
+);
+
+-- Create a link table for Employees and Projects (many-to-many relationship)
+create table employeeProject(
+    empID integer,                       -- Employee ID
+    projID integer,                      -- Project ID
+    primary key(empID,projID),           -- Unique pair of employee and project
+    foreign key(empID) references employees(empID),   -- Links to employee
+    foreign key(projID) references projects(projID)   -- Links to project
+);
+
+-- Insert department records
+insert into department values(101,'computer');
+insert into department values(102,'mechanical');
+insert into department values(103,'civil');
+insert into department values(104,'it');
+insert into department values(105,'aids');
+
+-- Insert employee records with department and salary information
+insert into employees values(1,'manasi','choudhari',101,10000);
+insert into employees values(2,'manas','dhomane',102,20000);
+insert into employees values(3,'raj','choudhari',103,30000);
+insert into employees values(4,'rhea','choudhari',104,40000);
+insert into employees values(5,'sai','chavan',105,50000);
+
+-- Insert project records
+insert into projects values(01,'mental_health');
+insert into projects values(02,'atm');
+insert into projects values(03,'farmer');
+insert into projects values(04,'data');
+
+-- Assign employees to projects
+insert into employeeProject values(1,01);
+insert into employeeProject values(2,02);
+insert into employeeProject values(3,03);
+insert into employeeProject values(4,04);
+
+-- List employee IDs with their department names
+select empID,deptName 
+from employees,department 
+where employees.deptID=department.deptID;
+
+-- List employee IDs with department IDs and department names
+select empID,employees.deptID,deptName 
+from employees,department 
+where employees.deptID=department.deptID;
+
+-- List all employees and the projects they are assigned to
+select employees.empID,projects.projID,projects.projName 
+from employees,projects,employeeProject 
+where employees.empID=employeeProject.empID 
+and projects.projID=employeeProject.projID;
+
+-- List all projects and which employees are assigned to them
+select projects.projID,projects.projName,employees.empid 
+from employees,projects,employeeProject 
+where employees.empID=employeeProject.empID 
+and projects.projID=employeeProject.projID;
+
+-- List all employees and projects (including unassigned ones)
+SELECT e.empID, p.projID, p.projName
+FROM employees e
+LEFT JOIN employeeProject ep ON e.empID = ep.empID
+LEFT JOIN projects p ON ep.projID = p.projID
+UNION
+SELECT e.empID, p.projID, p.projName
+FROM projects p
+LEFT JOIN employeeProject ep ON p.projID = ep.projID
+LEFT JOIN employees e ON ep.empID = e.empID;
+
+-- List employees whose salary is higher than the average salary
+select empID,salary 
+from employees 
+where salary>(select avg(salary)from employees);
+
+-- List employees working on the project named 'atm'
+select empid,fname,lname 
+from employees 
+where empid in(
+    select empid 
+    from employeeproject 
+    where projid=(
+        select projid 
+        from projects 
+        where projName='atm'
+    )
+);
+
+-- List departments where total salary is greater than 10000
+select deptName , sum(salary) 
+from department,employees 
+where employees.deptID=department.deptID 
+group by deptName 
+having sum(salary)>10000;
+
+-- Find total salary of each department
+select deptName , sum(salary) 
+from department,employees 
+where employees.deptID=department.deptID 
+group by deptName 
+having sum(salary);
+
+-- Create a view combining employees and their project details
+create view details as 
+select e.empID,e.fname,e.lname,p.projID,p.projName 
+from employees e,projects p,employeeproject ep 
+where e.empID=ep.empID and p.projID=ep.projID;
+
+-- Display all records from the created view
+select * from details;
+
+-- Find employees earning more than average salary
+select empID,fname,lname,salary 
+from employees 
+where salary>(select avg(salary) from employees);
+
+-- Find employees working in the same department as 'computer'
+SELECT e.empID, e.fname, e.lname, d.deptName
+FROM employees e
+JOIN department d ON e.deptID = d.deptID
+WHERE e.deptID = (
+    SELECT deptID
+    FROM department
+    WHERE deptName = 'computer'
+);
+
+-- Find projects that employee 'manasi' is working on
+select e.empID,e.fname,e.lname,p.projID,p.projName 
+from employees e,projects p,employeeproject ep 
+where e.empID=ep.empID and p.projID=ep.projID and e.fname='manasi';
+
+-- Find employees who are not assigned to any project
+select empID,fname,lname 
+from employees 
+where empID not in (select empID from employeeproject);
+
+-- Find departments with more than one employee
+select deptName , count(*) as no_employees 
+from department d,employees e 
+where e.deptID=d.deptID 
+group by d.deptName 
+having count(*)>1;
+
+-- Find departments with exactly one employee
+select deptName , count(*) as no_employees 
+from department d,employees e 
+where e.deptID=d.deptID 
+group by d.deptName 
+having count(*)=1;
+
+-- Find the highest-paid employee in each department
+SELECT e.empID, e.fname, e.lname, e.salary, d.deptName
+FROM employees e
+JOIN department d ON e.deptID = d.deptID
+WHERE e.salary = (
+    SELECT MAX(salary)
+    FROM employees
+    WHERE deptID = e.deptID
+);
+
+-- Find projects that have no employees assigned
+SELECT p.projID, p.projName
+FROM projects p
+LEFT JOIN employeeProject ep ON p.projID = ep.projID
+WHERE ep.projID IS NULL;

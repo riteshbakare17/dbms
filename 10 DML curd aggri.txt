@@ -1,0 +1,233 @@
+DROP DATABASE IF EXISTS inventory;
+CREATE DATABASE inventory;
+USE inventory;
+
+CREATE TABLE product(
+    pid INTEGER PRIMARY KEY,
+    pname VARCHAR(50),
+    pcategory VARCHAR(50),
+    price INTEGER,
+    stock_qty INTEGER
+);
+
+CREATE TABLE orders(
+    orderid INTEGER PRIMARY KEY,
+    orderdate INTEGER
+);
+
+CREATE TABLE order_items(
+    order_item_id INTEGER PRIMARY KEY,
+    order_id INTEGER,
+    product_id INTEGER,
+    qty INTEGER,
+    FOREIGN KEY (order_id) REFERENCES orders(orderid),
+    FOREIGN KEY (product_id) REFERENCES product(pid)
+);
+
+INSERT INTO product VALUES(01,'laptop','electronics',50000,20);
+INSERT INTO product VALUES(02,'phone','electronics',42000,10);
+INSERT INTO product VALUES(03,'headphones','electronics',5000,30);
+
+INSERT INTO orders VALUES(010,12072025);
+INSERT INTO orders VALUES(020,13072025);
+INSERT INTO orders VALUES(030,14072025);
+
+INSERT INTO order_items VALUES(1,010,01,2);
+INSERT INTO order_items VALUES(2,020,02,3);
+INSERT INTO order_items VALUES(3,030,03,5);
+
+SELECT * FROM product;
+SELECT * FROM orders;
+SELECT * FROM order_items;
+
+SELECT pid, pname FROM product;
+
+UPDATE product SET stock_qty = stock_qty - 2 WHERE pid = 01;
+UPDATE product SET stock_qty = stock_qty - 3 WHERE pid = 02;
+UPDATE product SET stock_qty = stock_qty - 5 WHERE pid = 03;
+
+SELECT * FROM product;
+
+DELETE FROM product WHERE stock_qty < 10;
+
+INSERT INTO product VALUES(04,'buds','electronics',5000,1);
+DELETE FROM product WHERE stock_qty < 5;
+
+SELECT * FROM product;
+
+SELECT SUM(stock_qty) FROM product GROUP BY pcategory;
+
+SELECT SUM(qty) FROM order_items GROUP BY order_id;
+
+SELECT SUM(qty) AS "total_qty" FROM order_items GROUP BY order_id;
+
+SELECT AVG(price) AS "average_price" FROM product GROUP BY pcategory;
+
+SELECT pcategory, orderdate, SUM(qty)
+FROM product, orders, order_items
+WHERE pid = product_id AND orderid = order_id
+GROUP BY pcategory, orderdate;
+
+SELECT order_id, SUM(qty * price)
+FROM product, orders, order_items
+WHERE pid = product_id AND orderid = order_id
+GROUP BY order_id;
+
+SELECT pcategory, order_id, SUM(qty), AVG(price)
+FROM product, orders, order_items
+WHERE pid = product_id AND orderid = order_id
+GROUP BY pcategory, order_id;
+
+SELECT pname, orderid, pcategory
+FROM product, orders, order_items
+WHERE pid = product_id AND orderid = order_id AND pcategory = 'electronics';
+
+CREATE INDEX idx_price ON product(price);
+
+SELECT pname, price FROM product ORDER BY price DESC;
+
+
+
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++[[[[[[[[[[[[[[+_++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+-- Create a new database named 'inventory'
+CREATE DATABASE inventory;
+
+-- Switch to using the 'inventory' database
+USE inventory;
+
+-- Create a new table called 'product' to store product details
+CREATE TABLE product(
+    pid INTEGER PRIMARY KEY,            -- 'pid' = Product ID (unique number for each product)
+    pname VARCHAR(50),                  -- 'pname' = Product Name (text up to 50 letters)
+    pcategory VARCHAR(50),              -- 'pcategory' = Product Category (like electronics, clothing)
+    price INTEGER,                      -- 'price' = Price of the product
+    stock_qty INTEGER                   -- 'stock_qty' = How many items are available in stock
+);
+
+-- Create a new table called 'orders' to store details of orders placed
+CREATE TABLE orders(
+    orderid INTEGER PRIMARY KEY,        -- 'orderid' = Unique ID for each order
+    orderdate INTEGER                   -- 'orderdate' = Date of the order (stored as number for simplicity)
+);
+
+-- Create a new table called 'order_items' to link products and orders
+CREATE TABLE order_items(
+    order_item_id INTEGER PRIMARY KEY,  -- 'order_item_id' = Unique ID for each row in this table
+    order_id INTEGER,                   -- 'order_id' = ID of the order (from orders table)
+    product_id INTEGER,                 -- 'product_id' = ID of the product (from product table)
+    qty INTEGER,                        -- 'qty' = Quantity of the product ordered
+    FOREIGN KEY (order_id) REFERENCES orders(orderid),     -- Make 'order_id' link to 'orders.orderid'
+    FOREIGN KEY (product_id) REFERENCES product(pid)        -- Make 'product_id' link to 'product.pid'
+);
+
+-- Insert a product record: Laptop, category electronics, price 50000, stock 20
+INSERT INTO product VALUES(01,'laptop','electronics',50000,20);
+
+-- Insert a product record: Phone, category electronics, price 42000, stock 10
+INSERT INTO product VALUES(02,'phone','electronics',42000,10);
+
+-- Insert a product record: Headphones, category electronics, price 5000, stock 30
+INSERT INTO product VALUES(03,'headphones','electronics',5000,30);
+
+-- Insert an order record: Order ID 10, order date 12-07-2025
+INSERT INTO orders VALUES(010,12072025);
+
+-- Insert an order record: Order ID 20, order date 13-07-2025
+INSERT INTO orders VALUES(020,13072025);
+
+-- Insert an order record: Order ID 30, order date 14-07-2025
+INSERT INTO orders VALUES(030,14072025);
+
+-- Insert a record showing order 10 included product 1 with quantity 2
+INSERT INTO order_items VALUES(1,010,01,2);
+
+-- Insert a record showing order 20 included product 2 with quantity 3
+INSERT INTO order_items VALUES(2,020,02,3);
+
+-- Insert a record showing order 30 included product 3 with quantity 5
+INSERT INTO order_items VALUES(3,030,03,5);
+
+-- Display all records (rows) from the 'product' table
+SELECT * FROM product;
+
+-- Display all records (rows) from the 'orders' table
+SELECT * FROM orders;
+
+-- Display all records (rows) from the 'order_items' table
+SELECT * FROM order_items;
+
+-- Display only product ID and product name columns from 'product' table
+SELECT pid, pname FROM product;
+
+-- Reduce stock of product ID 1 by 2 units after being ordered
+UPDATE product SET stock_qty = stock_qty - 2 WHERE pid = 01;
+
+-- Reduce stock of product ID 2 by 3 units after being ordered
+UPDATE product SET stock_qty = stock_qty - 3 WHERE pid = 02;
+
+-- Reduce stock of product ID 3 by 5 units after being ordered
+UPDATE product SET stock_qty = stock_qty - 5 WHERE pid = 03;
+
+-- Display all records from the 'product' table after stock updates
+SELECT * FROM product;
+
+-- Try to delete products with stock less than 10 (will fail if foreign key linked)
+DELETE FROM product WHERE stock_qty < 10;
+
+-- Insert a new product: Buds, category electronics, price 5000, stock 1
+INSERT INTO product VALUES(04,'buds','electronics',5000,1);
+
+-- Delete products that have stock less than 5
+DELETE FROM product WHERE stock_qty < 5;
+
+-- Display all records from the 'product' table after deletion
+SELECT * FROM product;
+
+-- Calculate total stock quantity for each product category
+SELECT SUM(stock_qty) FROM product GROUP BY pcategory;
+
+-- Calculate total quantity of products ordered per order ID
+SELECT SUM(qty) FROM order_items GROUP BY order_id;
+
+-- Same as above, but label the result column as "total_qty"
+SELECT SUM(qty) AS "total_qty" FROM order_items GROUP BY order_id;
+
+-- Calculate average price of products in each category
+SELECT AVG(price) AS "average_price" FROM product GROUP BY pcategory;
+
+-- Show total quantity of products ordered per category per date
+SELECT pcategory, orderdate, SUM(qty)         -- Select product category, order date, and total quantity ordered
+FROM product, orders, order_items             -- Use data from all three tables: product, orders, and order_items
+WHERE pid = product_id AND orderid = order_id -- Connect product table with order_items (by product id) and connect orders with order_items (by order id)
+GROUP BY pcategory, orderdate;                -- Group the result by category and date so SUM is calculated for each pair
+
+-- Show total sales amount for each order
+SELECT order_id, SUM(qty * price)             -- Select order ID and total price (quantity × price for each product)
+FROM product, orders, order_items             -- Combine the three tables to get all needed info
+WHERE pid = product_id AND orderid = order_id -- Link product table to order_items by product ID and orders table by order ID
+GROUP BY order_id;                            -- Group by order so each order shows its total amount
+
+-- Show total quantity and average price per category per order
+SELECT pcategory, order_id, SUM(qty), AVG(price)  -- Select product category, order ID, total quantity, and average price
+FROM product, orders, order_items                 -- Use all three tables for data
+WHERE pid = product_id AND orderid = order_id     -- Connect all tables using matching IDs
+GROUP BY pcategory, order_id;                     -- Group by both category and order so results are per category per order
+
+-- Show orders that contain products in the 'electronics' category
+SELECT pname, orderid, pcategory                  -- Select product name, order ID, and category to display
+FROM product, orders, order_items                 -- Get data from product, orders, and order_items tables
+WHERE pid = product_id AND orderid = order_id     -- Link the three tables using their ID columns
+AND pcategory = 'electronics';                    -- Show only rows where category is 'electronics'
+
+-- Create an index on the 'price' column for faster searching or sorting
+CREATE INDEX idx_price ON product(price);         -- Make an index named 'idx_price' on product table’s price column
+
+-- Show all product names and prices sorted by price (high to low)
+SELECT pname, price                               -- Select product name and price
+FROM product                                      -- Data comes from the product table
+ORDER BY price DESC;                              -- Sort results by price in descending order (highest first)

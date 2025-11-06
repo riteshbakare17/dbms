@@ -1,0 +1,35 @@
+// Step 0: Drop the collection if it exists (start fresh)
+db.students.drop();
+
+// Step 1: Insert multiple student documents (Create)
+db.students.insertMany([
+  {id: 1, name: "ABC", age: 20, department: "Computer Engineering", courses: {}}, 
+  {id: 2, name: "Pranav", age: 20, department: "Electrical Engineering"}
+]);
+
+// Step 2: Find students in Electrical Engineering (Read with condition)
+db.students.find({department: "Electrical Engineering"});
+
+// Step 3: Find only name and department for all students (Projection)
+db.students.find({}, {name: 1, department: 1});
+
+// Step 4: Update one student (Update)
+db.students.updateOne({id: 1}, {$set: {age: 21, department: "AI_DS"}});
+
+// Step 5: Check updated student with id 1 (Read)
+db.students.find({id: 1});
+
+// Step 6: Update all students to add 'college' field (Update many)
+db.students.updateMany({}, {$set: {college: "AISSMS IOIT"}});
+
+// Step 7: Check all students after update (Read)
+db.students.find();
+
+// Step 8: Delete one student with id 1 (Delete)
+db.students.deleteOne({id: 1});
+
+// Step 9: Delete all students with college "AISSMS IOIT" (Delete many)
+db.students.deleteMany({college: "AISSMS IOIT"});
+
+// Step 10: Check final state of the collection (Read)
+db.students.find();
