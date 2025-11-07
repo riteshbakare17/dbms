@@ -1,35 +1,108 @@
-// Step 0: Drop the collection if it exists (start fresh)
-db.students.drop();
+// ================================
+// Step 0: Drop the collection (start fresh)
+// ================================
 
-// Step 1: Insert multiple student documents (Create)
-db.students.insertMany([
-  {id: 1, name: "ABC", age: 20, department: "Computer Engineering", courses: {}}, 
-  {id: 2, name: "Pranav", age: 20, department: "Electrical Engineering"}
+db.sales.drop(); 
+
+// This will remove the 'sales' collection if it exists so you can start fresh.
+
+// ================================
+// Step 1: Insert sample data
+// ================================
+
+db.sales.insertMany([ 
+  { item: "apple", quantity: 5, price: 0.5 }, 
+  { item: "banana", quantity: 10, price: 1.0 },   
+  { item: "apple", quantity: 15, price: 0.5 }, 
+  { item: "orange", quantity: 8, price: 0.75 } 
 ]);
 
-// Step 2: Find students in Electrical Engineering (Read with condition)
-db.students.find({department: "Electrical Engineering"});
 
-// Step 3: Find only name and department for all students (Projection)
-db.students.find({}, {name: 1, department: 1});
+// Inserts 4 documents into the 'sales' collection
 
-// Step 4: Update one student (Update)
-db.students.updateOne({id: 1}, {$set: {age: 21, department: "AI_DS"}});
+// ================================
+// Step 2: Total quantity and total price for each item (Aggregation)
+// ================================
 
-// Step 5: Check updated student with id 1 (Read)
-db.students.find({id: 1});
+db.sales.aggregate([ 
+  { 
+    $group: {       
+      _id: "$item",                      // Group by item name
+      totalQuantity: { $sum: "$quantity" },  // Sum of quantity for each item
+      totalPrice: { $sum: { $multiply: ["$quantity", "$price"] } } // Sum(quantity*price)
+    } 
+  } 
+]);
 
-// Step 6: Update all students to add 'college' field (Update many)
-db.students.updateMany({}, {$set: {college: "AISSMS IOIT"}});
+// Output example:
+// { _id: 'banana', totalQuantity: 10, totalPrice: 10 }
+// { _id: 'orange', totalQuantity: 8, totalPrice: 6 }
+// { _id: 'apple', totalQuantity: 20, totalPrice: 10 }
 
-// Step 7: Check all students after update (Read)
-db.students.find();
+// ================================
+// Step 3: Find the minimum price among all items
+// ================================
 
-// Step 8: Delete one student with id 1 (Delete)
-db.students.deleteOne({id: 1});
+db.sales.aggregate([ 
+  { 
+    $group: {       
+      _id: null, 
+      minPrice: { $min: "$price" }  // Finds the minimum price
+    } 
+  } 
+]);
 
-// Step 9: Delete all students with college "AISSMS IOIT" (Delete many)
-db.students.deleteMany({college: "AISSMS IOIT"});
+// Output example: { _id: null, minPrice: 0.5 }
 
-// Step 10: Check final state of the collection (Read)
-db.students.find();
+// ================================
+// Step 4: Find the maximum price among all items
+// ================================
+
+db.sales.aggregate([ 
+  { 
+    $group: {       
+      _id: null, 
+      maxPrice: { $max: "$price" }  // Finds the maximum price
+    } 
+  } 
+]);
+
+// Output example: { _id: null, maxPrice: 1 }
+
+// ================================
+// Step 5: Count of each item
+// ================================
+db.sales.aggregate([   
+  { 
+    $group: { 
+      _id: "$item",     // Group by item name
+      count: { $sum: 1 }  // Count the number of occurrences
+    } 
+  }
+]);
+// Output example:
+// { _id: 'apple', count: 2 }
+// { _id: 'banana', count: 1 }
+// { _id: 'orange', count: 1 }
+
+// ================================
+// Step 6: Optional - Sort items by total price descending
+// ================================
+db.sales.aggregate([
+  {
+    $group: {
+      _id: "$item",
+      totalQuantity: { $sum: "$quantity" },
+      totalPrice: { $sum: { $multiply: ["$quantity", "$price"] } }
+    }
+  },
+  { $sort: { totalPrice: -1 } } // Sort by totalPrice descending
+]);
+
+// ================================
+// Step 7: Create an index on 'item' field to improve query performance
+// ================================
+db.sales.createIndex({ item: 1 });
+// This creates an ascending index on the 'item' field
+// Queries filtering or grouping by 'item' will run faster
+
